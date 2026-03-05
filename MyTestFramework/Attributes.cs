@@ -13,7 +13,11 @@ namespace Framework
 	}
 
 	[AttributeUsage(AttributeTargets.Method)]
-	public class IgnoreAttribute : Attribute { }
+	public class TimeoutAttribute : Attribute
+	{
+		public int Milliseconds { get; }
+		public TimeoutAttribute(int ms) => Milliseconds = ms;
+	}
 
 	[AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]
 	public class TestCaseAttribute : Attribute
@@ -22,9 +26,7 @@ namespace Framework
 		public TestCaseAttribute(params object[] parameters) => Params = parameters;
 	}
 
-	[AttributeUsage(AttributeTargets.Method)]
 	public class BeforeEachAttribute : Attribute { }
-
-	[AttributeUsage(AttributeTargets.Method)]
 	public class AfterEachAttribute : Attribute { }
+	public class IgnoreAttribute : Attribute { }
 }

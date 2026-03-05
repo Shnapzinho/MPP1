@@ -5,7 +5,7 @@ namespace Framework
 	public static class Assert
 	{
 		public static void AreEqual(object exp, object act) { if (!Equals(exp, act)) throw new AssertionException($"Expected: {exp}, but got: {act}"); }
-		public static void AreNotEqual(object exp, object act) { if (Equals(exp, act)) throw new AssertionException("Values are equal, but they should not be"); }
+		public static void AreNotEqual(object exp, object act) { if (Equals(exp, act)) throw new AssertionException("Values should be not equal"); }
 		public static void IsTrue(bool cond) { if (!cond) throw new AssertionException("Expected: True"); }
 		public static void IsFalse(bool cond) { if (cond) throw new AssertionException("Expected: False"); }
 		public static void IsNull(object obj) { if (obj != null) throw new AssertionException("Expected: Null"); }

@@ -1,6 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using Framework;
 
@@ -8,74 +11,117 @@ namespace Runner
 {
 	class Program
 	{
+		private static readonly object _consoleLock = new object();
+
 		static async Task Main()
 		{
 			var assembly = typeof(Tests.LibraryTests).Assembly;
-			var testClasses = assembly.GetTypes().Where(t => t.GetCustomAttribute<TestClassAttribute>() != null);
 
-			int passed = 0, failed = 0, ignored = 0;
+			Console.WriteLine("RUNNING SEQUENTIAL");
+			var sw = Stopwatch.StartNew();
+			await RunAll(assembly, 1);
+			sw.Stop();
+			long seqTime = sw.ElapsedMilliseconds;
+
+			Console.WriteLine($"\nSequential Time: {seqTime} ms\n");
+
+			int maxParallelism = 4;
+			Console.WriteLine($"RUNNING PARALLEL (MaxDegree: {maxParallelism})");
+			sw.Restart();
+			await RunAll(assembly, maxParallelism);
+			sw.Stop();
+			long parTime = sw.ElapsedMilliseconds;
+
+			Console.WriteLine($"\nParallel Time: {parTime} ms");
+			Console.WriteLine($"Efficiency: {((double)seqTime / parTime):F2}x faster");
+
+			Console.ReadKey();
+		}
+
+		static async Task RunAll(Assembly assembly, int degree)
+		{
+			var testClasses = assembly.GetTypes().Where(t => t.GetCustomAttribute<TestClassAttribute>() != null);
+			var allTests = new List<TestEntry>();
 
 			foreach (var type in testClasses)
 			{
-				Console.WriteLine($"TESTS: {type.Name}");
-				var instance = Activator.CreateInstance(type);
 				var methods = type.GetMethods();
 				var setup = methods.FirstOrDefault(m => m.GetCustomAttribute<BeforeEachAttribute>() != null);
 				var cleanup = methods.FirstOrDefault(m => m.GetCustomAttribute<AfterEachAttribute>() != null);
-				var testMethods = methods
-					.Where(m => m.GetCustomAttribute<TestMethodAttribute>() != null)
-					.OrderByDescending(m => m.GetCustomAttribute<TestMethodAttribute>().Priority);
+				var tests = methods.Where(m => m.GetCustomAttribute<TestMethodAttribute>() != null);
 
-				foreach (var method in testMethods)
+				foreach (var m in tests)
 				{
-					var testAttr = method.GetCustomAttribute<TestMethodAttribute>();
-					var ignoreAttr = method.GetCustomAttribute<IgnoreAttribute>();
-
-					if (ignoreAttr != null)
-					{
-						Console.ForegroundColor = ConsoleColor.Yellow;
-						Console.Write("[SKIP] ");
-						Console.ResetColor();
-						Console.WriteLine(testAttr.Description ?? method.Name);
-						ignored++; 
-						Console.ResetColor(); 
-						continue;
-					}
-
-					var cases = method.GetCustomAttributes<TestCaseAttribute>().ToList();
+					var cases = m.GetCustomAttributes<TestCaseAttribute>().ToList();
 					if (!cases.Any()) cases.Add(new TestCaseAttribute(null));
-
 					foreach (var tc in cases)
-					{
-						try
-						{
-							setup?.Invoke(instance, null);
-							object result = (tc.Params == null) ? method.Invoke(instance, null) : method.Invoke(instance, tc.Params);
-							if (result is Task t) await t;
-
-							Console.ForegroundColor = ConsoleColor.Green;
-							Console.Write("[PASS] ");
-							Console.ResetColor();
-							Console.WriteLine(testAttr.Description ?? method.Name);
-							passed++;
-						}
-						catch (Exception ex)
-						{
-							Console.ForegroundColor = ConsoleColor.Red;
-							Console.Write("[FAIL] ");
-							Console.ResetColor();
-							var msg = ex.InnerException?.Message ?? ex.Message;
-							Console.WriteLine($"{testAttr.Description ?? method.Name}. {msg}");
-							failed++;
-						}
-						finally { cleanup?.Invoke(instance, null); Console.ResetColor(); }
-					}
+						allTests.Add(new TestEntry { Type = type, Method = m, Params = tc.Params, Setup = setup, Cleanup = cleanup });
 				}
 			}
-			Console.WriteLine("\n==============================");
-			Console.WriteLine($"TOTALS: Passed: {passed}, Failed: {failed}, Ignored: {ignored}");
-			Console.WriteLine("==============================");
-			Console.ReadKey();
+
+			using (var semaphore = new SemaphoreSlim(degree))
+			{
+				var tasks = allTests.Select(async test =>
+				{
+					await semaphore.WaitAsync();
+					try { await ExecuteTest(test); }
+					finally { semaphore.Release(); }
+				});
+				await Task.WhenAll(tasks);
+			}
 		}
+
+		static async Task ExecuteTest(TestEntry entry)
+		{
+			var instance = Activator.CreateInstance(entry.Type);
+			var testAttr = entry.Method.GetCustomAttribute<TestMethodAttribute>();
+			var timeoutAttr = entry.Method.GetCustomAttribute<TimeoutAttribute>();
+			string name = $"{entry.Method.Name}: {testAttr.Description}";
+
+			try
+			{
+				entry.Setup?.Invoke(instance, null);
+
+				var task = Task.Run(() => {
+					object res = (entry.Params == null) ? entry.Method.Invoke(instance, null) : entry.Method.Invoke(instance, entry.Params);
+					if (res is Task t) t.GetAwaiter().GetResult();
+				});
+
+				if (timeoutAttr != null)
+				{
+					if (await Task.WhenAny(task, Task.Delay(timeoutAttr.Milliseconds)) != task)
+						throw new Exception($"Timeout exceeded ({timeoutAttr.Milliseconds}ms)");
+				}
+
+				await task;
+				Log("[PASS]", ConsoleColor.Green, name);
+			}
+			catch (Exception ex)
+			{
+				var msg = ex.InnerException?.Message ?? ex.Message;
+				Log("[FAIL]", ConsoleColor.Red, $"{name}. {msg}");
+			}
+			finally { entry.Cleanup?.Invoke(instance, null); }
+		}
+
+		static void Log(string status, ConsoleColor color, string msg)
+		{
+			lock (_consoleLock) 
+			{
+				Console.ForegroundColor = color;
+				Console.Write(status + " ");
+				Console.ResetColor();
+				Console.WriteLine($"[Thread {Thread.CurrentThread.ManagedThreadId}] {msg}");
+			}
+		}
+	}
+
+	class TestEntry 
+	{
+		public Type Type; 
+		public MethodInfo Method; 
+		public object[] Params; 
+		public MethodInfo Setup; 
+		public MethodInfo Cleanup;
 	}
 }

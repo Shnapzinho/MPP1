@@ -28,7 +28,7 @@ namespace Tests
 			Assert.IsNotNull(_db.GetBooks().Find(b => b.Title == title));
 		}
 
-		[TestMethod(Description = "Register members with different names")]
+		[TestMethod(Description = "Register members with different names", Priority = 5)]
 		[TestCase("Alice")]
 		[TestCase("Bob")]
 		[TestCase("Charlie")]
@@ -120,7 +120,7 @@ namespace Tests
 		[TestMethod(Description = "Logic false failure")]
 		public void T17() => Assert.IsFalse(true);
 
-		[TestMethod(Description = "String content mismatch")]
+		[TestMethod(Description = "String content mismatch", Priority = 3)]
 		public void T18() => Assert.Contains("Orange", "Apple Juice");
 
 		[TestMethod(Description = "Book limit logic error demonstration")]
