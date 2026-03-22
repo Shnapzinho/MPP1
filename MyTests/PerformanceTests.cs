@@ -15,11 +15,15 @@ namespace Tests
 		[TestMethod(Description = "Long task 3 (1 second)")]
 		public void LongTest3() => Thread.Sleep(1000);
 
+		[Timeout(700)]
+		[TestMethod(Description = "Should fail by timeout")]
+		public void TimeoutTest1() => Thread.Sleep(1000);
+
 		[TestMethod(Description = "Long task 4 (1 second)")]
 		public void LongTest4() => Thread.Sleep(1000);
 
 		[Timeout(500)]
 		[TestMethod(Description = "Should fail by timeout")]
-		public void TimeoutTest() => Thread.Sleep(1000);
+		public void TimeoutTest2() => Thread.Sleep(1000);
 	}
 }

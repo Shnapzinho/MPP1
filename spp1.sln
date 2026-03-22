@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.14.36429.23 d17.14
+VisualStudioVersion = 17.14.36429.23
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Runner", "spp1\Runner.csproj", "{631A30AE-0F85-4B02-AFAA-629B18C406A4}"
 EndProject
@@ -10,6 +10,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Project", "TargetProject\Project.csproj", "{6EF74216-A799-4107-A2FA-06974567D734}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "MyTests\Tests.csproj", "{4FF18F9A-DE1B-4B89-B6AA-E3E3ED97DA9E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyThreadPool", "MyThreadPool\MyThreadPool.csproj", "{92602FC4-A588-4293-89AD-FD07F09F68DA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,6 +35,10 @@ Global
 		{4FF18F9A-DE1B-4B89-B6AA-E3E3ED97DA9E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4FF18F9A-DE1B-4B89-B6AA-E3E3ED97DA9E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4FF18F9A-DE1B-4B89-B6AA-E3E3ED97DA9E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{92602FC4-A588-4293-89AD-FD07F09F68DA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{92602FC4-A588-4293-89AD-FD07F09F68DA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{92602FC4-A588-4293-89AD-FD07F09F68DA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{92602FC4-A588-4293-89AD-FD07F09F68DA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
