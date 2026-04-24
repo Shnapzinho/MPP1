@@ -26,7 +26,8 @@ namespace MyThreadPool
 
 			lock (_lock)
 			{
-				for (int i = 0; i < _minThreads; i++) AddWorker();
+				for (int i = 0; i < _minThreads; i++) 
+					AddWorker();
 			}
 
 			Thread manager = new Thread(ManagePool) { IsBackground = true, Name = "PoolManager" };
@@ -83,7 +84,7 @@ namespace MyThreadPool
 						}
 					}
 				}
-				Thread.Sleep(100);
+				Thread.Sleep(200);
 			}
 		}
 
@@ -105,7 +106,7 @@ namespace MyThreadPool
 
 			public void Start() => _thread.Start();
 			public void Stop() => _shouldStop = true;
-			public void Abandon() { _shouldStop = true; }
+			public void Abandon() => _shouldStop = true; 
 
 			public bool IsIdleTooLong(int limit) => !_isWorking && _timer.ElapsedMilliseconds > limit;
 			public bool IsHung(int limit) => _isWorking && _timer.ElapsedMilliseconds > limit;
@@ -117,12 +118,12 @@ namespace MyThreadPool
 					Action task = null;
 					lock (_parent._lock)
 					{
-						while (_parent._taskQueue.Count == 0 && !_shouldStop)
+						while (_parent._taskQueue.Count == 0 && !_shouldStop && !_parent._isDisposed)
 						{
 							_isWorking = false;
 							Monitor.Wait(_parent._lock, 1000);
 						}
-						if (_shouldStop) break;
+						if (_shouldStop || _parent._isDisposed) break;
 						if (_parent._taskQueue.Count > 0) task = _parent._taskQueue.Dequeue();
 					}
 
@@ -148,7 +149,8 @@ namespace MyThreadPool
 		public void Dispose()
 		{
 			_isDisposed = true;
-			lock (_lock) Monitor.PulseAll(_lock);
+			lock (_lock) 
+				Monitor.PulseAll(_lock);
 		}
 	}
 }

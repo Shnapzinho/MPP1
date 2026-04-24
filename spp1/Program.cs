@@ -25,7 +25,7 @@ namespace Runner
 				while (true)
 				{
 					Console.Title = $"Threads: {pool.CurrentThreadCount} | Queue: {pool.QueueCount} | P:{_passed} F:{_failed} S:{_skipped}";
-					Thread.Sleep(200);
+					Thread.Sleep(500);
 				}
 			})
 			{ IsBackground = true };
@@ -39,7 +39,7 @@ namespace Runner
 				Thread.Sleep(1000); 
 			}
 
-			Console.WriteLine("\nPHASE 2: PEAK LOAD! (Submitting 50 tasks)");
+			Console.WriteLine("\nPHASE 2: PEAK LOAD! (Submitting 50+ tasks)");
 			for (int i = 0; i < 80; i++)
 			{
 				var entry = testEntries[i % testEntries.Count];
